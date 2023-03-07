@@ -5,8 +5,9 @@ s3://datafoundrykqt/trips.csv
 --IAM: Create Redshift role 
 arn:aws:iam::201993417919:role/myredshiftrole
 
--- Create tables in Redshift 
+-- Create tables in Redshift
 
+--Create trips table
 CREATE TABLE public.trips (
     vendorid character varying(256) ENCODE lzo,
     tpep_pickup_datetime timestamp without time zone ENCODE az64,
@@ -26,10 +27,19 @@ CREATE TABLE public.trips (
     tripid character varying(256) ENCODE lzo
 ) DISTSTYLE AUTO;
 
+--Create surcharge table
+create table surcharge (
+    tripid varchar,
+    improvement_surcharge numeric(18,2), 
+    congestion_surcharge numeric(18,2)
+    );
+
+
 --Load data from S3 into Redshift table--
 
 COPY dev.public.trips FROM 's3://datafoundrykqt/trips.csv' IAM_ROLE 'arn:aws:iam::201993417919:role/myredshiftrole' FORMAT AS CSV DELIMITER ',' QUOTE '"' IGNOREHEADER 1 REGION AS 'ap-southeast-2'
 
+COPY dev.public.surcharge FROM 's3://datafoundrykqt/surcharge.csv' IAM_ROLE 'arn:aws:iam::201993417919:role/myredshiftrole' FORMAT AS CSV DELIMITER ',' QUOTE '"' IGNOREHEADER 1 REGION AS 'ap-southeast-2'
 
 --Clean data 
 
@@ -71,14 +81,4 @@ UPDATE trips
 SET payment_type = cast(payment_type AS INTEGER);
 
 --Connect Dataset from RedShift Serverless to Tableau manually
-
---Create Surcharge table
-create table surcharge (
-    tripid varchar,
-    improvement_surcharge numeric(18,2), 
-    congestion_surcharge numeric(18,2)
-    );
-	
-COPY dev.public.surcharge FROM 's3://datafoundrykqt/surcharge.csv' IAM_ROLE 'arn:aws:iam::201993417919:role/myredshiftrole' FORMAT AS CSV DELIMITER ',' QUOTE '"' IGNOREHEADER 1 REGION AS 'ap-southeast-2'
-
 --Join trips and surcharge table on Tableau by TripID
